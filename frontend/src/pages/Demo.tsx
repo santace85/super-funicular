@@ -10,7 +10,7 @@ const Demo = () => {
 
   const handleGenerate = async () => {
     if (!resume || !jobTitle) {
-      setError("Please enter resume and job title.");
+      setError("Please enter both resume summary and job description.");
       return;
     }
 
@@ -23,7 +23,7 @@ const Demo = () => {
         resumeSummary: resume,
         jobDescription: jobTitle,
         isDemo: true,
-        });
+      });
 
       setResult(response.result);
     } catch (err) {
@@ -35,49 +35,69 @@ const Demo = () => {
   };
 
   return (
-    <div style={{ maxWidth: "900px", margin: "auto", padding: "2rem" }}>
-      <h1>AI Career Toolkit Demo</h1>
-
-      <div style={{ marginBottom: "1rem" }}>
-        <label>Resume</label>
-        <textarea
-          value={resume}
-          onChange={(e) => setResume(e.target.value)}
-          rows={8}
-          style={{ width: "100%" }}
-        />
-      </div>
-
-      <div style={{ marginBottom: "1rem" }}>
-        <label>Job Title</label>
-        <input
-          value={jobTitle}
-          onChange={(e) => setJobTitle(e.target.value)}
-          style={{ width: "100%", padding: "8px" }}
-        />
-      </div>
-
-      <button onClick={handleGenerate} disabled={loading}>
-        {loading ? "Generating..." : "Generate Cover Letter"}
-      </button>
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {result && (
-        <div style={{ marginTop: "2rem" }}>
-          <h3>Result</h3>
-          <pre
-            style={{
-              whiteSpace: "pre-wrap",
-              background: "#f5f5f5",
-              padding: "1rem",
-              color: "black"
-            }}
-          >
-            {result}
-          </pre>
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 text-gray-200">
+      <div className="bg-gray-800 shadow-xl rounded-2xl w-full max-w-6xl p-8 space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-gray-100">
+            AI Career Toolkit
+          </h1>
+          <p className="text-gray-400">
+            Generate personalized cover letters in seconds
+          </p>
         </div>
-      )}
+
+        {/* Resume Input */}
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-gray-200">
+            Resume Summary
+          </label>
+          <textarea
+            value={resume}
+            onChange={(e) => setResume(e.target.value)}
+            rows={6}
+            placeholder="Paste your resume summary here..."
+            className="w-full rounded-lg border border-gray-600 p-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Job Input */}
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-gray-200">
+            Job Description
+          </label>
+          <input
+            value={jobTitle}
+            onChange={(e) => setJobTitle(e.target.value)}
+            placeholder="Enter job description or title..."
+            className="w-full rounded-lg border border-gray-600 p-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Generate Button */}
+        <button
+          onClick={handleGenerate}
+          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
+        >
+          {loading ? "Generating..." : "Generate Cover Letter"}
+        </button>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-700 text-red-200 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {/* Result */}
+        {result && (
+          <div className="bg-gray-700 border border-gray-600 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-gray-100">Generated Cover Letter</h3>
+            <pre className="whitespace-pre-wrap text-gray-200">{result}</pre>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
