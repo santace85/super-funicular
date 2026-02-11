@@ -1,0 +1,6 @@
+@Super_Funicular.Api_HostAddress = http://localhost:5201
+
+GET {{Super_Funicular.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

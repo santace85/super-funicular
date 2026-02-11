@@ -1,5 +1,4 @@
-# super-funicular
-AI Career Toolkit
+# AI Career Toolkit
 
 Demo-first AI platform to help job seekers
 generate cover letters, improve resumes,
