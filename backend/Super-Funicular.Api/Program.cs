@@ -1,12 +1,25 @@
+using System.Reflection;
+using SuperFunicular.Api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
+// Load env vars
 builder.Configuration.AddEnvironmentVariables();
 
 
-// Add services to the container.
+// --------------------
+// Services
+// --------------------
 
+// 🔹 Add Controllers (REQUIRED for API controllers + Swagger)
+builder.Services.AddControllers();
+
+// 🔹 Swagger + XML Docs
+var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
 
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new()
@@ -15,7 +28,15 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "Backend API for AI Career Toolkit"
     });
+
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
 });
+
+
+// 🔹 CORS (Dev-friendly)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevCors", policy =>
@@ -28,58 +49,74 @@ builder.Services.AddCors(options =>
 });
 
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// 🔹 DI
+builder.Services.AddScoped<IAiService, MockAiService>();
+
 
 var app = builder.Build();
 
 
+// --------------------
+// Middleware
+// --------------------
 
-
-// Swagger (Dev only)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
+
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "AI Career Toolkit API v1");
-        c.RoutePrefix = "swagger";
+        c.RoutePrefix = "swagger"; // /swagger
     });
-    
-}
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
 
+app.UseCors("DevCors");
+
+
+// 🔹 IMPORTANT: Enables Controllers
+app.MapControllers();
+
+
+// --------------------
+// Minimal APIs (Optional)
+// --------------------
+
 var summaries = new[]
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    "Freezing", "Bracing", "Chilly", "Cool",
+    "Mild", "Warm", "Balmy", "Hot",
+    "Sweltering", "Scorching"
 };
 
-app.MapGet("/api/health", () => "OK");
+app.MapGet("/api/health", () => "OK")
+   .WithDescription("Checks whether the API is running")
+   .WithTags("Dev");
 
 app.MapGet("/api/weatherforecast", () =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
+    var forecast = Enumerable.Range(1, 5).Select(index =>
+        new WeatherForecast(
             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
             Random.Shared.Next(-20, 55),
             summaries[Random.Shared.Next(summaries.Length)]
         ))
         .ToArray();
+
     return forecast;
 })
-.WithName("GetWeatherForecast");
+.WithDescription("Gets the Weather Forecast")
+.WithTags("Dev");
 
-app.UseCors("DevCors");
 
 app.Run();
+
+
+// --------------------
+// Records
+// --------------------
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
