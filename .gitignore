@@ -57,3 +57,4 @@ backend/Super-Funicular.Api/appsettings.Development.json
 backend/Super-Funicular.Api/appsettings.json
 node_modules/
 package-lock.json
+frontend/package-lock.json
