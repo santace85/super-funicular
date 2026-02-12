@@ -1,17 +1,31 @@
 import { useState } from "react";
 import { generateCoverLetter } from "../api/aiAPI";
+import ResumeInput, {
+  type ResumePayload,
+} from "../components/common/ResumeInput";
 
 const Demo = () => {
-  const [resume, setResume] = useState("");
-  const [jobTitle, setJobTitle] = useState("");
-  const [result, setResult] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [resume, setResume] = useState<string>("");
+  const [jobDescription, setJobDescription] = useState<string>("");
+  const [result, setResult] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [resumePayload, setResumePayload] = useState<ResumePayload | null>(
+    null,
+  );
 
   const handleGenerate = async () => {
-    if (!resume || !jobTitle) {
-      setError("Please enter both resume summary and job description.");
+    if (!resumePayload || !jobDescription) {
+      setError("Please enter both resume and job description.");
       return;
+    }
+
+    let resumeSummary = "";
+
+    if (resumePayload.type === "text") {
+      resumeSummary = resumePayload.data;
+    } else {
+      resumeSummary = "Uploaded file: " + resumePayload.data.name;
     }
 
     try {
@@ -20,8 +34,8 @@ const Demo = () => {
       setResult("");
 
       const response = await generateCoverLetter({
-        resumeSummary: resume,
-        jobDescription: jobTitle,
+        resumeSummary,
+        jobDescription: jobDescription,
         isDemo: true,
       });
 
@@ -47,28 +61,18 @@ const Demo = () => {
           </p>
         </div>
 
-        {/* Resume Input */}
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-200">
-            Resume Summary
-          </label>
-          <textarea
-            value={resume}
-            onChange={(e) => setResume(e.target.value)}
-            rows={6}
-            placeholder="Paste your resume summary here..."
-            className="w-full rounded-lg border border-gray-600 p-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        {/* Resume Input Component */}
+        <ResumeInput onChange={setResumePayload} />
 
         {/* Job Input */}
         <div className="space-y-1">
           <label className="text-sm font-medium text-gray-200">
             Job Description
           </label>
-          <input
-            value={jobTitle}
-            onChange={(e) => setJobTitle(e.target.value)}
+          <textarea
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            rows={6}
             placeholder="Enter job description or title..."
             className="w-full rounded-lg border border-gray-600 p-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -85,15 +89,15 @@ const Demo = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-700 text-red-200 p-3 rounded-lg">
-            {error}
-          </div>
+          <div className="bg-red-700 text-red-200 p-3 rounded-lg">{error}</div>
         )}
 
         {/* Result */}
         {result && (
           <div className="bg-gray-700 border border-gray-600 rounded-lg p-4 space-y-2">
-            <h3 className="font-semibold text-gray-100">Generated Cover Letter</h3>
+            <h3 className="font-semibold text-gray-100">
+              Generated Cover Letter
+            </h3>
             <pre className="whitespace-pre-wrap text-gray-200">{result}</pre>
           </div>
         )}

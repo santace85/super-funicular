@@ -1,24 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from "react";
 import Demo from "./pages/Demo";
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.text())
+      .then(console.log);
+  }, []);
 
-useEffect(() => {
-  fetch('/api/health')
-    .then(r => r.text())
-    .then(console.log);
-}, []);
-
-
-  return (
-
-   <Demo />
-
-  )
+  return <Demo />;
 }
 
-export default App
+export default App;

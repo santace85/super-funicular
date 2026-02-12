@@ -11,12 +11,9 @@ export interface AiResponse {
 }
 
 export const generateCoverLetter = async (
-  data: CoverLetterRequest
+  data: CoverLetterRequest,
 ): Promise<AiResponse> => {
-  const response = await api.post<AiResponse>(
-    "/api/Ai/cover-letter",
-    data
-  );
+  const response = await api.post<AiResponse>("/api/Ai/cover-letter", data);
 
   return response.data;
 };
