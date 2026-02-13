@@ -5,9 +5,9 @@ import mammoth from "mammoth";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-export type ResumePayload =
-  | { type: "text"; data: string }
-  | { type: "file"; data: File };
+export type ResumePayload = {
+  text: string;
+};
 
 interface ResumeInputProps {
   onChange: (payload: ResumePayload | null) => void;
@@ -59,22 +59,19 @@ const ResumeInput: React.FC<ResumeInputProps> = ({ onChange }) => {
     }
 
     setFile(selected);
-    onChange({ type: "file", data: selected });
 
-    // If PDF → extract preview text
+    let extracted = "";
+
     if (selected.type === "application/pdf") {
-      setParsing(true);
-      await extractPdfText(selected);
-      setParsing(false);
-    } else if (
-      selected.type ===
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      setParsing(true);
-      await extractDocxText(selected);
-
-      setParsing(false);
+      extracted = await extractPdfText(selected);
+    } else {
+      extracted = await extractDocxText(selected);
     }
+
+    setPreviewText(extracted.slice(0, 1500));
+
+    // 🔥 Send extracted text upward
+    onChange({ text: extracted });
   };
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
@@ -88,48 +85,34 @@ const ResumeInput: React.FC<ResumeInputProps> = ({ onChange }) => {
 
   const handleTextChange = (value: string) => {
     setResumeText(value);
-    onChange(value.trim() ? { type: "text", data: value } : null);
+    onChange(value.trim() ? { text: value } : null);
   };
 
-  const extractPdfText = async (file: File) => {
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const extractPdfText = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-      let fullText = "";
+    let fullText = "";
+    const pagesToRead = Math.min(pdf.numPages, 2);
 
-      // Only read first 2 pages (keeps it fast)
-      const pagesToRead = Math.min(pdf.numPages, 2);
+    for (let i = 1; i <= pagesToRead; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
 
-      for (let i = 1; i <= pagesToRead; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item: any) => ("str" in item ? item.str : ""))
+        .join(" ");
 
-        const pageText = content.items
-          .map((item: any) => ("str" in item ? item.str : ""))
-          .join(" ");
-
-        fullText += pageText + "\n\n";
-      }
-
-      setPreviewText(fullText.slice(0, 1500));
-    } catch (err) {
-      console.error("PDF parsing error:", err);
-      setPreviewText("Unable to preview this PDF.");
+      fullText += pageText + "\n\n";
     }
+
+    return fullText;
   };
 
-  const extractDocxText = async (file: File) => {
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-
-      const result = await mammoth.extractRawText({ arrayBuffer });
-
-      setPreviewText(result.value.slice(0, 1500));
-    } catch (err) {
-      console.error("DOCX parsing error:", err);
-      setPreviewText("Unable to preview this DOCX file.");
-    }
+  const extractDocxText = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
   };
 
   return (
