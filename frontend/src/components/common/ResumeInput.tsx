@@ -158,12 +158,6 @@ const ResumeInput: React.FC<ResumeInputProps> = ({ onChange }) => {
             onChange={(e) => handleTextChange(e.target.value)}
             className="w-full rounded-xl bg-gray-700 border border-gray-600 p-4 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-
-          {resumeText && (
-            <div className="bg-gray-900 border border-gray-700 rounded-xl p-4 text-sm text-gray-300 whitespace-pre-wrap max-h-60 overflow-y-auto">
-              {resumeText}
-            </div>
-          )}
         </>
       )}
 

@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { generateCoverLetter } from "../api/aiAPI";
 import ResumeInput from "../components/common/ResumeInput";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
+import { useState, useRef, useEffect } from "react";
 
 const Demo = () => {
   const [jobDescription, setJobDescription] = useState<string>("");
@@ -11,6 +11,21 @@ const Demo = () => {
   const [error, setError] = useState<string>("");
   const [resumeText, setResumeText] = useState("");
   const [jobTitle, setJobTitle] = useState("");
+  const resultRef = useRef<HTMLDivElement | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = async () => {
+    if (!result) return;
+
+    try {
+      await navigator.clipboard.writeText(result);
+      setCopied(true);
+
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      alert("Copy failed — browser blocked clipboard.");
+    }
+  };
 
   const downloadAsDocx = async () => {
     if (!result) return;
@@ -65,6 +80,15 @@ const Demo = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (result && resultRef.current) {
+      resultRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [result]);
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 text-gray-200">
@@ -130,7 +154,10 @@ const Demo = () => {
 
         {/* Result */}
         {result && (
-          <div className="space-y-4">
+          <div
+            ref={resultRef}
+            className="space-y-4 bg-gray-700 border border-gray-600 rounded-lg p-4 animate-[fadeIn_.35s_ease]"
+          >
             <div className="bg-gray-700 border border-gray-600 rounded-lg p-4">
               <h3 className="font-semibold text-gray-100 mb-2">
                 Generated Cover Letter
@@ -143,6 +170,18 @@ const Demo = () => {
               className="bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded-lg font-semibold shadow-lg hover:shadow-green-500/30"
             >
               Download Cover Letter
+            </button>
+
+            <button
+              onClick={copyToClipboard}
+              className={`px-4 py-2 ml-1 rounded-lg font-semibold transition border
+      ${
+        copied
+          ? "bg-emerald-500 text-white border-emerald-400"
+          : "bg-gray-800 text-gray-200 border-gray-600 hover:bg-gray-700"
+      }`}
+            >
+              {copied ? "Copied ✓" : "Copy to Clipboard"}
             </button>
           </div>
         )}
