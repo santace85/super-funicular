@@ -2,7 +2,10 @@ namespace SuperFunicular.Api.Services;
 
 public class MockAiService : IAiService
 {
-    public Task<string> GenerateAsync(string prompt)
+    public Task<string> GenerateAsync(
+        string prompt,
+        string userId,
+        CancellationToken cancellationToken)
     {
         var fakeResponse = $"""
         [DEMO MODE]
@@ -16,4 +19,5 @@ public class MockAiService : IAiService
 
         return Task.FromResult(fakeResponse);
     }
+
 }

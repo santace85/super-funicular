@@ -51,6 +51,13 @@ builder.Services.AddCors(options =>
 
 // 🔹 DI
 builder.Services.AddScoped<IAiService, MockAiService>();
+builder.Services.AddHttpClient<IAiService, GeminiAiService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+builder.Services.AddSingleton<UsageTracker>();
+builder.Services.AddSingleton<UserRateLimiter>();
+
 
 
 var app = builder.Build();

@@ -17,12 +17,20 @@ public class AiController : ControllerBase
         _aiService = aiService;
     }
 
+    private string GetUserId()
+    {
+        return User.Identity?.Name 
+               ?? HttpContext.Connection.RemoteIpAddress?.ToString() 
+               ?? "anonymous";
+    }
+
     /// <summary>
     /// Generates a tailored cover letter
     /// </summary>
     [HttpPost("cover-letter")]
     public async Task<ActionResult<AiResponse>> GenerateCoverLetter(
-        [FromBody] CoverLetterRequest request)
+        [FromBody] CoverLetterRequest request,
+        CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -39,13 +47,27 @@ public class AiController : ControllerBase
         Write a concise, professional cover letter.
         """;
 
-        var result = await _aiService.GenerateAsync(prompt);
-
-        return Ok(new AiResponse
+        try
         {
-            Result = result,
-            Provider = "Mock",
-        });
+            var result = await _aiService.GenerateAsync(
+                prompt,
+                GetUserId(),
+                cancellationToken);
+
+            return Ok(new AiResponse
+            {
+                Result = result,
+                Provider = "Gemini"
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            return StatusCode(499); // Client Closed Request
+        }
+        catch (RateLimitExceededException)
+        {
+            return StatusCode(429, "Rate limit exceeded. Please try again later.");
+        }
     }
 
     /// <summary>
@@ -53,7 +75,8 @@ public class AiController : ControllerBase
     /// </summary>
     [HttpPost("resume-improve")]
     public async Task<ActionResult<AiResponse>> ImproveResume(
-        [FromBody] ResumeImproveRequest request)
+        [FromBody] ResumeImproveRequest request,
+        CancellationToken cancellationToken)
     {
         var prompt = $"""
         Improve this resume bullet point:
@@ -63,13 +86,27 @@ public class AiController : ControllerBase
         Make it results-oriented and professional.
         """;
 
-        var result = await _aiService.GenerateAsync(prompt);
-
-        return Ok(new AiResponse
+        try
         {
-            Result = result,
-            Provider = "Mock"
-        });
+            var result = await _aiService.GenerateAsync(
+                prompt,
+                GetUserId(),
+                cancellationToken);
+
+            return Ok(new AiResponse
+            {
+                Result = result,
+                Provider = "Gemini"
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            return StatusCode(499);
+        }
+        catch (RateLimitExceededException)
+        {
+            return StatusCode(429, "Rate limit exceeded. Please try again later.");
+        }
     }
 
     /// <summary>
@@ -77,7 +114,8 @@ public class AiController : ControllerBase
     /// </summary>
     [HttpPost("interview-answer")]
     public async Task<ActionResult<AiResponse>> GenerateInterviewAnswer(
-        [FromBody] InterviewAnswerRequest request)
+        [FromBody] InterviewAnswerRequest request,
+        CancellationToken cancellationToken)
     {
         var prompt = $"""
         Answer this interview question using the STAR method:
@@ -85,12 +123,26 @@ public class AiController : ControllerBase
         {request.Question}
         """;
 
-        var result = await _aiService.GenerateAsync(prompt);
-
-        return Ok(new AiResponse
+        try
         {
-            Result = result,
-            Provider = "Mock"
-        });
+            var result = await _aiService.GenerateAsync(
+                prompt,
+                GetUserId(),
+                cancellationToken);
+
+            return Ok(new AiResponse
+            {
+                Result = result,
+                Provider = "Gemini"
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            return StatusCode(499);
+        }
+        catch (RateLimitExceededException)
+        {
+            return StatusCode(429, "Rate limit exceeded. Please try again later.");
+        }
     }
 }
