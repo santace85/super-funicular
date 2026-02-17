@@ -36,7 +36,7 @@ const AppLayout = () => {
                 `${linkBase} ${isActive ? active : inactive}`
               }
             >
-              Resume Optimizer
+              Resume
             </NavLink>
 
             <NavLink
@@ -45,7 +45,7 @@ const AppLayout = () => {
                 `${linkBase} ${isActive ? active : inactive}`
               }
             >
-              Interview Helper
+              Interview
             </NavLink>
           </div>
         </div>

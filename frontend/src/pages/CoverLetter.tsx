@@ -95,7 +95,7 @@ const CoverLetter = () => {
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-gray-100">
-            AI Career Toolkit
+            Tailored Cover Letter
           </h1>
           <p className="text-gray-400">
             Generate personalized cover letters in seconds
