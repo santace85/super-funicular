@@ -4,7 +4,7 @@ import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
 import { useState, useRef, useEffect } from "react";
 
-const Demo = () => {
+const CoverLetter = () => {
   const [jobDescription, setJobDescription] = useState<string>("");
   const [result, setResult] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -69,7 +69,6 @@ const Demo = () => {
       const response = await generateCoverLetter({
         resumeSummary: resumeText,
         jobDescription,
-        isDemo: true,
       });
 
       setResult(response.result);
@@ -190,4 +189,4 @@ const Demo = () => {
   );
 };
 
-export default Demo;
+export default CoverLetter;

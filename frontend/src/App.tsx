@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import Demo from "./pages/Demo";
+import CoverLetter from "./pages/CoverLetter";
 import "./App.css";
 
 function App() {
@@ -9,7 +9,7 @@ function App() {
       .then(console.log);
   }, []);
 
-  return <Demo />;
+  return <CoverLetter />;
 }
 
 export default App;

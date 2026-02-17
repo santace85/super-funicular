@@ -35,16 +35,31 @@ public class AiController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        var today = DateTime.UtcNow.ToString("MMMM dd, yyyy");
+
         var prompt = $"""
         You are a professional career coach.
 
-        Resume:
+        Generate a polished, professional cover letter using the information below.
+
+        FORMATTING REQUIREMENTS:
+        - Use today's date: {today}
+        - Do NOT include a subject line.
+        - Do NOT include placeholders like [Your Name].
+        - Do NOT include commentary, explanations, or separators.
+        - Output ONLY the final cover letter text.
+        - If the company name appears in the job description, use it.
+        - If a hiring manager name is not provided, use "Hiring Manager".
+        - Do not invent names.
+        - Use proper business letter formatting.
+
+        Resume Summary:
         {request.ResumeSummary}
 
         Job Description:
         {request.JobDescription}
 
-        Write a concise, professional cover letter.
+        Write a concise, tailored cover letter.
         """;
 
         try

@@ -3,7 +3,6 @@ import api from "./client";
 export interface CoverLetterRequest {
   resumeSummary: string;
   jobDescription: string;
-  isDemo: boolean;
 }
 
 export interface AiResponse {
