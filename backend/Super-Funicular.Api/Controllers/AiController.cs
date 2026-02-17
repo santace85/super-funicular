@@ -71,8 +71,7 @@ public class AiController : ControllerBase
 
             return Ok(new AiResponse
             {
-                Result = result,
-                Provider = "Gemini"
+                Result = result
             });
         }
         catch (OperationCanceledException)
@@ -88,9 +87,9 @@ public class AiController : ControllerBase
     /// <summary>
     /// Improves a resume bullet point
     /// </summary>
-    [HttpPost("resume-improve")]
-    public async Task<ActionResult<AiResponse>> ImproveResume(
-        [FromBody] ResumeImproveRequest request,
+    [HttpPost("improve-resume-bullet")]
+    public async Task<ActionResult<AiResponse>> ImproveResumeBullet(
+        [FromBody] ImproveResumeBulletRequest request,
         CancellationToken cancellationToken)
     {
         var prompt = $"""
@@ -110,8 +109,7 @@ public class AiController : ControllerBase
 
             return Ok(new AiResponse
             {
-                Result = result,
-                Provider = "Gemini"
+                Result = result
             });
         }
         catch (OperationCanceledException)
@@ -147,8 +145,7 @@ public class AiController : ControllerBase
 
             return Ok(new AiResponse
             {
-                Result = result,
-                Provider = "Gemini"
+                Result = result
             });
         }
         catch (OperationCanceledException)
@@ -160,4 +157,133 @@ public class AiController : ControllerBase
             return StatusCode(429, "Rate limit exceeded. Please try again later.");
         }
     }
+
+    /// <summary>
+    /// Tailors a resume to a specific job description
+    /// </summary>
+    [HttpPost("tailor-resume")]
+    public async Task<ActionResult<AiResponse>> TailorResume(
+        [FromBody] TailorResumeRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var atsSection = request.AtsOptimized
+            ? """
+            Additionally:
+            - Optimize for ATS scanning systems.
+            - Align keywords directly with the job description.
+            - Increase keyword matching rate.
+            - Ensure formatting remains ATS-friendly.
+            """
+            : string.Empty;
+
+        var prompt = $"""
+        You are a high-level career strategist.
+
+        Tailor the following resume specifically to match the job description provided.
+
+        Objectives:
+        - Align experience with job requirements.
+        - Increase relevance.
+        - Reorder bullet points for impact.
+        - Emphasize matching skills.
+        - Keep content truthful and do not invent experience.
+
+        {atsSection}
+
+        IMPORTANT:
+        - Do not fabricate companies or roles.
+        - Do not exaggerate beyond provided experience.
+        - Output only the tailored resume text.
+
+        Resume:
+        {request.ResumeText}
+
+        Job Description:
+        {request.JobDescription}
+        """;
+
+        try
+        {
+            var result = await _aiService.GenerateAsync(
+                prompt,
+                GetUserId(),
+                cancellationToken);
+
+            return Ok(new AiResponse { Result = result });
+        }
+        catch (OperationCanceledException)
+        {
+            return StatusCode(499);
+        }
+        catch (RateLimitExceededException)
+        {
+            return StatusCode(429, "Rate limit exceeded. Please try again later.");
+        }
+    }
+
+
+    /// <summary>
+    /// Optimizes an entire resume
+    /// </summary>
+    [HttpPost("optimize-resume")]
+    public async Task<ActionResult<AiResponse>> OptimizeResume(
+        [FromBody] OptimizeResumeRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var atsSection = request.AtsOptimized
+            ? """
+            Additionally:
+            - Optimize for Applicant Tracking Systems (ATS).
+            - Use strong industry keywords.
+            - Avoid graphics or special formatting.
+            - Ensure keyword density matches modern AI resume scanners.
+            """
+            : string.Empty;
+
+        var prompt = $"""
+        You are an elite executive career coach.
+
+        Improve and optimize the following resume to make it:
+        - More impactful
+        - Results-oriented
+        - Concise
+        - Modern and professional
+
+        {atsSection}
+
+        IMPORTANT:
+        - Do not invent experience.
+        - Do not fabricate metrics.
+        - Keep all content truthful.
+        - Output only the improved resume text.
+
+        Resume:
+        {request.ResumeText}
+        """;
+
+        try
+        {
+            var result = await _aiService.GenerateAsync(
+                prompt,
+                GetUserId(),
+                cancellationToken);
+
+            return Ok(new AiResponse { Result = result });
+        }
+        catch (OperationCanceledException)
+        {
+            return StatusCode(499);
+        }
+        catch (RateLimitExceededException)
+        {
+            return StatusCode(429, "Rate limit exceeded. Please try again later.");
+        }
+    }
+
 }

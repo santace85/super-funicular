@@ -6,5 +6,4 @@ public class CoverLetterRequest
 
     public string JobDescription { get; set; } = string.Empty;
 
-    public bool IsDemo { get; set; } = true;
 }
