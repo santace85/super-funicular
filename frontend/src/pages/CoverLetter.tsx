@@ -91,26 +91,25 @@ const CoverLetter = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold text-gray-100">
+          Tailored Cover Letter
+        </h1>
+        <p className="text-gray-400">
+          Generate personalized cover letters in seconds
+        </p>
+      </div>
+
+      {/* Resume Input Component */}
+      <ResumeInput
+        onChange={(payload) => {
+          if (payload) {
+            setResumeText(payload.text);
+          }
+        }}
+      />
       <div className="bg-gray-800 shadow-xl rounded-2xl w-full max-w-6xl p-8 space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-gray-100">
-            Tailored Cover Letter
-          </h1>
-          <p className="text-gray-400">
-            Generate personalized cover letters in seconds
-          </p>
-        </div>
-
-        {/* Resume Input Component */}
-        <ResumeInput
-          onChange={(payload) => {
-            if (payload) {
-              setResumeText(payload.text);
-            }
-          }}
-        />
-
         {/* Job Title */}
         <div className="space-y-1">
           <label className="text-sm font-medium text-gray-200">Job Title</label>
@@ -136,55 +135,55 @@ const CoverLetter = () => {
             className="w-full rounded-lg border border-gray-600 p-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+      </div>
 
-        {/* Generate Button */}
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
+      {/* Generate Button */}
+      <button
+        onClick={handleGenerate}
+        disabled={loading}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
+      >
+        {loading ? "Generating..." : "Generate Cover Letter"}
+      </button>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-700 text-red-200 p-3 rounded-lg">{error}</div>
+      )}
+
+      {/* Result */}
+      {result && (
+        <div
+          ref={resultRef}
+          className="space-y-4 bg-gray-700 border border-gray-600 rounded-lg p-4 animate-[fadeIn_.35s_ease]"
         >
-          {loading ? "Generating..." : "Generate Cover Letter"}
-        </button>
+          <div className="bg-gray-700 border border-gray-600 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-100 mb-2">
+              Generated Cover Letter
+            </h3>
+            <pre className="whitespace-pre-wrap text-gray-200">{result}</pre>
+          </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-700 text-red-200 p-3 rounded-lg">{error}</div>
-        )}
-
-        {/* Result */}
-        {result && (
-          <div
-            ref={resultRef}
-            className="space-y-4 bg-gray-700 border border-gray-600 rounded-lg p-4 animate-[fadeIn_.35s_ease]"
+          <button
+            onClick={downloadAsDocx}
+            className="bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded-lg font-semibold shadow-lg hover:shadow-green-500/30"
           >
-            <div className="bg-gray-700 border border-gray-600 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-100 mb-2">
-                Generated Cover Letter
-              </h3>
-              <pre className="whitespace-pre-wrap text-gray-200">{result}</pre>
-            </div>
+            Download Cover Letter
+          </button>
 
-            <button
-              onClick={downloadAsDocx}
-              className="bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded-lg font-semibold shadow-lg hover:shadow-green-500/30"
-            >
-              Download Cover Letter
-            </button>
-
-            <button
-              onClick={copyToClipboard}
-              className={`px-4 py-2 ml-1 rounded-lg font-semibold transition border
+          <button
+            onClick={copyToClipboard}
+            className={`px-4 py-2 ml-1 rounded-lg font-semibold transition border
       ${
         copied
           ? "bg-emerald-500 text-white border-emerald-400"
           : "bg-gray-800 text-gray-200 border-gray-600 hover:bg-gray-700"
       }`}
-            >
-              {copied ? "Copied ✓" : "Copy to Clipboard"}
-            </button>
-          </div>
-        )}
-      </div>
+          >
+            {copied ? "Copied ✓" : "Copy to Clipboard"}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
