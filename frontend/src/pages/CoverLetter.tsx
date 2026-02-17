@@ -90,7 +90,7 @@ const CoverLetter = () => {
   }, [result]);
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 text-gray-200">
+    <div className="space-y-6">
       <div className="bg-gray-800 shadow-xl rounded-2xl w-full max-w-6xl p-8 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
