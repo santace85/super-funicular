@@ -23,6 +23,7 @@ const ResumeInput: React.FC<ResumeInputProps> = ({ onChange }) => {
   const [error, setError] = useState("");
   const [previewText, setPreviewText] = useState("");
   const [parsing, setParsing] = useState(false);
+  const [showExtractionNotice, setShowExtractionNotice] = useState(false);
 
   const allowedTypes = [
     "application/pdf",
@@ -46,6 +47,7 @@ const ResumeInput: React.FC<ResumeInputProps> = ({ onChange }) => {
       return false;
     }
 
+    setShowExtractionNotice(false);
     setError("");
     return true;
   };
@@ -69,6 +71,7 @@ const ResumeInput: React.FC<ResumeInputProps> = ({ onChange }) => {
     }
 
     setPreviewText(extracted.slice(0, 1500));
+    setShowExtractionNotice(true);
 
     // 🔥 Send extracted text upward
     onChange({ text: extracted });
@@ -93,7 +96,7 @@ const ResumeInput: React.FC<ResumeInputProps> = ({ onChange }) => {
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
     let fullText = "";
-    const pagesToRead = Math.min(pdf.numPages, 2);
+    const pagesToRead = pdf.numPages;
 
     for (let i = 1; i <= pagesToRead; i++) {
       const page = await pdf.getPage(i);
@@ -215,6 +218,19 @@ const ResumeInput: React.FC<ResumeInputProps> = ({ onChange }) => {
                 Resume Preview
               </div>
               {previewText}
+            </div>
+          )}
+
+          {showExtractionNotice && (
+            <div className="mt-4 bg-blue-600/10 border border-blue-500/30 text-blue-300 text-sm rounded-xl p-4">
+              <div className="font-medium mb-1">Extraction Complete</div>
+              <p className="text-blue-200">
+                We extracted your resume content for AI processing. If
+                formatting appears incomplete (such as headers or footers),
+                consider using the{" "}
+                <span className="font-semibold">Paste Text</span> option for
+                best results.
+              </p>
             </div>
           )}
         </div>

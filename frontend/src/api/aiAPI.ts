@@ -1,18 +1,40 @@
-import api from "./client";
+import axios from "axios";
+import type {
+  CoverLetterRequest,
+  OptimizeResumeRequest,
+  TailorResumeRequest,
+  InterviewAnswerRequest,
+  AiResponse,
+} from "../types/ai";
 
-export interface CoverLetterRequest {
-  resumeSummary: string;
-  jobDescription: string;
-}
-
-export interface AiResponse {
-  result: string;
-}
+const api = axios.create({
+  baseURL: "/api/ai",
+});
 
 export const generateCoverLetter = async (
-  data: CoverLetterRequest,
+  payload: CoverLetterRequest,
 ): Promise<AiResponse> => {
-  const response = await api.post<AiResponse>("/api/Ai/cover-letter", data);
+  const { data } = await api.post("/cover-letter", payload);
+  return data;
+};
 
-  return response.data;
+export const optimizeResume = async (
+  payload: OptimizeResumeRequest,
+): Promise<AiResponse> => {
+  const { data } = await api.post("/optimize-resume", payload);
+  return data;
+};
+
+export const tailorResume = async (
+  payload: TailorResumeRequest,
+): Promise<AiResponse> => {
+  const { data } = await api.post("/tailor-resume", payload);
+  return data;
+};
+
+export const generateInterviewAnswer = async (
+  payload: InterviewAnswerRequest,
+): Promise<AiResponse> => {
+  const { data } = await api.post("/interview-answer", payload);
+  return data;
 };

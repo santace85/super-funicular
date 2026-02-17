@@ -121,7 +121,7 @@ public class AiController : ControllerBase
             return StatusCode(429, "Rate limit exceeded. Please try again later.");
         }
     }
-
+        
     /// <summary>
     /// Generates an interview answer
     /// </summary>
@@ -130,10 +130,49 @@ public class AiController : ControllerBase
         [FromBody] InterviewAnswerRequest request,
         CancellationToken cancellationToken)
     {
-        var prompt = $"""
-        Answer this interview question using the STAR method:
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
+        var toneInstruction = request.Tone switch
+        {
+            "technical" => "Respond with strong technical depth and specificity.",
+            "leadership" => "Emphasize leadership, ownership, and strategic thinking.",
+            "concise" => "Keep the answer clear, tight, and impactful.",
+            _ => "Respond confidently and professionally."
+        };
+
+        var experienceInstruction = request.ExperienceLevel switch
+        {
+            "entry" => "Frame the response as an early-career professional with foundational experience and strong learning ability.",
+            "senior" => "Frame the response as a senior-level professional with deep expertise and ownership.",
+            "executive" => "Frame the response as an executive-level leader focused on business impact and strategic outcomes.",
+            _ => "Frame the response as a mid-level professional with solid hands-on experience."
+        };
+
+        var prompt = $"""
+        You are a professional interview coach.
+
+        Answer the following interview question using the STAR method:
+
+        QUESTION:
         {request.Question}
+
+        STRUCTURE REQUIREMENTS:
+        - Clearly label Situation
+        - Clearly label Task
+        - Clearly label Action
+        - Clearly label Result
+        - Focus on measurable impact when possible
+        - Do not fabricate experience
+        - Keep it realistic and professional
+
+        TONE:
+        {toneInstruction}
+
+        EXPERIENCE LEVEL:
+        {experienceInstruction}
+
+        Output only the interview answer.
         """;
 
         try
@@ -157,6 +196,7 @@ public class AiController : ControllerBase
             return StatusCode(429, "Rate limit exceeded. Please try again later.");
         }
     }
+
 
     /// <summary>
     /// Tailors a resume to a specific job description
