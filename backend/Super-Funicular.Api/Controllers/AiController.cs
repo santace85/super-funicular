@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using SuperFunicular.Api.Models.Requests;
 using SuperFunicular.Api.Models.Responses;
 using SuperFunicular.Api.Services;
+using SuperFunicular.Api.Models.Gemini;
+using System.Text.Json;
+
 
 namespace SuperFunicular.Api.Controllers;
 
@@ -19,8 +22,8 @@ public class AiController : ControllerBase
 
     private string GetUserId()
     {
-        return User.Identity?.Name 
-               ?? HttpContext.Connection.RemoteIpAddress?.ToString() 
+        return User.Identity?.Name
+               ?? HttpContext.Connection.RemoteIpAddress?.ToString()
                ?? "anonymous";
     }
 
@@ -121,7 +124,7 @@ public class AiController : ControllerBase
             return StatusCode(429, "Rate limit exceeded. Please try again later.");
         }
     }
-        
+
     /// <summary>
     /// Generates an interview answer
     /// </summary>
@@ -198,11 +201,8 @@ public class AiController : ControllerBase
     }
 
 
-    /// <summary>
-    /// Tailors a resume to a specific job description
-    /// </summary>
     [HttpPost("tailor-resume")]
-    public async Task<ActionResult<AiResponse>> TailorResume(
+    public async Task<ActionResult<StructuredResumeResponse>> TailorResume(
         [FromBody] TailorResumeRequest request,
         CancellationToken cancellationToken)
     {
@@ -211,58 +211,103 @@ public class AiController : ControllerBase
 
         var atsSection = request.AtsOptimized
             ? """
-            Additionally:
-            - Optimize for ATS scanning systems.
-            - Align keywords directly with the job description.
-            - Increase keyword matching rate.
-            - Ensure formatting remains ATS-friendly.
-            """
+Additionally:
+- Optimize for ATS scanning systems.
+- Align keywords directly with the job description.
+- Ensure formatting remains ATS-friendly.
+"""
             : string.Empty;
 
-        var prompt = $"""
-        You are a high-level career strategist.
+        var prompt =
+    """
+You are an elite executive career strategist.
 
-        Tailor the following resume specifically to match the job description provided.
+Rewrite the resume and return ONLY valid JSON in the following structure:
 
-        Objectives:
-        - Align experience with job requirements.
-        - Increase relevance.
-        - Reorder bullet points for impact.
-        - Emphasize matching skills.
-        - Keep content truthful and do not invent experience.
+{
+  "header": {
+    "name": "Full Name if provided",
+    "email": "Email if available",
+    "phone": "Phone if available",
+    "location": "Location if available",
+    "links": [
+      { "label": "LinkedIn", "url": "linkedin.com/in/example" }
+    ]
+  },
+  "sections": [
+    {
+      "type": "paragraph",
+      "title": "Professional Summary",
+      "content": "Summary text"
+    },
+    {
+      "type": "experience",
+      "title": "Experience",
+      "items": [
+        {
+          "heading": "Role – Company",
+          "subheading": "Date range",
+          "bullets": ["Achievement"]
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "title": "Skills",
+      "items": [
+        { "value": "Skill 1" },
+        { "value": "Skill 2" }
+      ]
+    }
+  ]
+}
 
-        {atsSection}
+RULES:
+- Return ONLY valid JSON.
+- No markdown.
+- No commentary.
+- Do not fabricate experience.
+""" + atsSection + """
 
-        IMPORTANT:
-        - Do not fabricate companies or roles.
-        - Do not exaggerate beyond provided experience.
-        - Output only the tailored resume text.
+Resume:
+""" + request.ResumeText + """
 
-        Resume:
-        {request.ResumeText}
+Job Description:
+""" + request.JobDescription;
 
-        Job Description:
-        {request.JobDescription}
-        """;
+        var result = await _aiService.GenerateAsync(
+            prompt,
+            GetUserId(),
+            cancellationToken);
+
+        var cleaned = result
+            .Replace("```json", "")
+            .Replace("```", "")
+            .Trim();
+
+        StructuredResumeResponse? structured;
 
         try
         {
-            var result = await _aiService.GenerateAsync(
-                prompt,
-                GetUserId(),
-                cancellationToken);
+            structured = JsonSerializer.Deserialize<StructuredResumeResponse>(
+                cleaned,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+        }
+        catch
+        {
+            return StatusCode(500, "AI returned invalid JSON.");
+        }
 
-            return Ok(new AiResponse { Result = result });
-        }
-        catch (OperationCanceledException)
-        {
-            return StatusCode(499);
-        }
-        catch (RateLimitExceededException)
-        {
-            return StatusCode(429, "Rate limit exceeded. Please try again later.");
-        }
+        if (structured == null || structured.Sections.Count == 0)
+            return StatusCode(500, "AI returned malformed structure.");
+
+        return Ok(structured);
     }
+
+
 
 
     /// <summary>
@@ -289,23 +334,38 @@ public class AiController : ControllerBase
         var prompt = $"""
         You are an elite executive career coach.
 
-        Improve and optimize the following resume to make it:
-        - More impactful
-        - Results-oriented
-        - Concise
-        - Modern and professional
+        Rewrite and optimize the following resume.
+
+        GOALS:
+        - Make it impactful and results-driven.
+        - Improve clarity and conciseness.
+        - Maintain professional tone.
+        - Keep all information truthful.
+        - Do not invent roles, companies, or metrics.
 
         {atsSection}
 
-        IMPORTANT:
-        - Do not invent experience.
-        - Do not fabricate metrics.
-        - Keep all content truthful.
-        - Output only the improved resume text.
+        FORMATTING RULES:
+        - Output plain text only.
+        - Do NOT use Markdown.
+        - Do NOT use bold, italics, or symbols like ** or ##.
+        - Do NOT use bullet characters like -, *, or •.
+        - Use simple line breaks between sections.
+        - Use ALL CAPS for section headings.
+        - Keep formatting clean and compatible with Microsoft Word.
+
+        Example section headings:
+        SUMMARY
+        EXPERIENCE
+        EDUCATION
+        SKILLS
+
+        Output only the final resume text.
 
         Resume:
         {request.ResumeText}
         """;
+
 
         try
         {
@@ -313,6 +373,10 @@ public class AiController : ControllerBase
                 prompt,
                 GetUserId(),
                 cancellationToken);
+
+            Console.WriteLine("AI RAW OUTPUT:");
+            Console.WriteLine(result);
+
 
             return Ok(new AiResponse { Result = result });
         }

@@ -3,13 +3,15 @@ import { optimizeResume, tailorResume } from "../api/aiAPI";
 import ResumeInput from "../components/common/ResumeInput";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
+import type { StructuredResume } from "../types/structuredResume";
+import ResumeRenderer from "../components/common/ResumeRenderer";
 
 const ResumeOptimize = () => {
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [tailorMode, setTailorMode] = useState(false);
   const [atsOptimized, setAtsOptimized] = useState(true);
-  const [result, setResult] = useState("");
+  const [structured, setStructured] = useState<StructuredResume | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -29,7 +31,7 @@ const ResumeOptimize = () => {
     try {
       setLoading(true);
       setError("");
-      setResult("");
+      setStructured(null);
 
       const response = tailorMode
         ? await tailorResume({
@@ -42,7 +44,8 @@ const ResumeOptimize = () => {
             atsOptimized,
           });
 
-      setResult(response.result);
+      setStructured(response);
+      console.log("Structured Resume:", response);
     } catch (err) {
       console.error(err);
       setError("Failed to generate resume optimization.");
@@ -52,32 +55,141 @@ const ResumeOptimize = () => {
   };
 
   const copyToClipboard = async () => {
-    await navigator.clipboard.writeText(result);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (!structured) return;
+
+    const text = structured.sections
+      .map((section) => {
+        if (section.type === "paragraph")
+          return `${section.title}\n${section.content}`;
+
+        if (section.type === "list")
+          return `${section.title}\n${section.items.join("\n")}`;
+
+        if (section.type === "experience")
+          return (
+            section.title +
+            "\n" +
+            section.items
+              .map(
+                (e) =>
+                  `${e.heading}\n${e.subheading ?? ""}\n${e.bullets.join("\n")}`,
+              )
+              .join("\n\n")
+          );
+
+        return "";
+      })
+      .join("\n\n");
+
+    await navigator.clipboard.writeText(text);
+  };
+
+  const buildDocx = async (resume: StructuredResume) => {
+    const children: Paragraph[] = [];
+
+    // HEADER (not Word header)
+    if (resume.header?.name) {
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: resume.header.name,
+              bold: true,
+              size: 36,
+            }),
+          ],
+          alignment: "center",
+        }),
+      );
+
+      const contactLine = [
+        resume.header.email,
+        resume.header.phone,
+        resume.header.location,
+      ]
+        .filter(Boolean)
+        .join(" • ");
+
+      if (contactLine) {
+        children.push(
+          new Paragraph({
+            text: contactLine,
+            alignment: "center",
+          }),
+        );
+      }
+
+      children.push(new Paragraph(""));
+    }
+
+    // SECTIONS
+    resume.sections.forEach((section) => {
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: section.title, bold: true })],
+          spacing: { before: 300 },
+        }),
+      );
+
+      if (section.type === "paragraph") {
+        children.push(new Paragraph(section.content));
+      }
+
+      if (section.type === "list") {
+        section.items.forEach((item) => {
+          children.push(
+            new Paragraph({
+              text: item,
+              bullet: { level: 0 },
+            }),
+          );
+        });
+      }
+
+      if (section.type === "experience") {
+        section.items.forEach((exp) => {
+          children.push(
+            new Paragraph({
+              children: [new TextRun({ text: exp.heading, bold: true })],
+            }),
+          );
+
+          if (exp.subheading) {
+            children.push(new Paragraph(exp.subheading));
+          }
+
+          exp.bullets.forEach((b) => {
+            children.push(
+              new Paragraph({
+                text: b,
+                bullet: { level: 0 },
+              }),
+            );
+          });
+        });
+      }
+    });
+
+    const doc = new Document({
+      sections: [{ children }],
+    });
+
+    return doc;
   };
 
   const downloadAsDocx = async () => {
-    const paragraphs = result.split("\n").map(
-      (line) =>
-        new Paragraph({
-          children: [new TextRun(line)],
-        }),
-    );
+    if (!structured) return;
 
-    const doc = new Document({
-      sections: [{ children: paragraphs }],
-    });
-
+    const doc = await buildDocx(structured);
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, "optimized_resume.docx");
+    saveAs(blob, "professional_resume.docx");
   };
 
   useEffect(() => {
-    if (result && resultRef.current) {
+    if (structured && resultRef.current) {
       resultRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [result]);
+  }, [structured]);
 
   return (
     <div className="space-y-8">
@@ -143,14 +255,14 @@ const ResumeOptimize = () => {
         <div className="bg-red-700 text-red-200 p-3 rounded-lg">{error}</div>
       )}
 
-      {result && (
+      {structured && (
         <div
           ref={resultRef}
           className="space-y-4 bg-gray-800 border border-gray-700 rounded-2xl p-6"
         >
           <h3 className="text-xl font-semibold text-white">Optimized Resume</h3>
 
-          <pre className="whitespace-pre-wrap text-gray-200">{result}</pre>
+          <ResumeRenderer resume={structured} />
 
           <div className="flex gap-3 flex-wrap">
             <button

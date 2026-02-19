@@ -6,6 +6,7 @@ import type {
   InterviewAnswerRequest,
   AiResponse,
 } from "../types/ai";
+import type { StructuredResume } from "../types/structuredResume";
 
 const api = axios.create({
   baseURL: "/api/ai",
@@ -20,14 +21,14 @@ export const generateCoverLetter = async (
 
 export const optimizeResume = async (
   payload: OptimizeResumeRequest,
-): Promise<AiResponse> => {
+): Promise<StructuredResume> => {
   const { data } = await api.post("/optimize-resume", payload);
   return data;
 };
 
 export const tailorResume = async (
   payload: TailorResumeRequest,
-): Promise<AiResponse> => {
+): Promise<StructuredResume> => {
   const { data } = await api.post("/tailor-resume", payload);
   return data;
 };
